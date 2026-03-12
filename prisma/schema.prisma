@@ -1,0 +1,91 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SensorStation {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  latitude  Decimal  @db.Decimal(10, 8)
+  longitude Decimal  @db.Decimal(11, 8)
+  status    String   @default("active") @db.VarChar(20)
+  type      String   @default("fixed") @db.VarChar(20)
+  createdAt DateTime @default(now())
+
+  airQualityData AirQualityData[]
+  forecasts      Forecast[]
+
+  @@map("sensor_stations")
+}
+
+model AirQualityData {
+  id        Int      @id @default(autoincrement())
+  stationId Int
+  timestamp DateTime @default(now())
+  pm25      Decimal? @db.Decimal(8, 2)
+  pm10      Decimal? @db.Decimal(8, 2)
+  no2       Decimal? @db.Decimal(8, 2)
+  o3        Decimal? @db.Decimal(8, 2)
+  co        Decimal? @db.Decimal(8, 2)
+  so2       Decimal? @db.Decimal(8, 2)
+  aqi       Int?
+
+  station SensorStation @relation(fields: [stationId], references: [id])
+
+  @@map("air_quality_data")
+}
+
+model Forecast {
+  id           Int      @id @default(autoincrement())
+  stationId    Int
+  forecastTime DateTime
+  predictedAqi Int?
+  confidence   Decimal? @db.Decimal(5, 2)
+
+  station SensorStation @relation(fields: [stationId], references: [id])
+
+  @@map("forecasts")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(255)
+  username  String   @unique @db.VarChar(50)
+  password  String?
+  points    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  posts CommunityPost[]
+
+  @@map("users")
+}
+
+model CommunityPost {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  content   String
+  location  String?
+  aqi       Int?
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("community_posts")
+}
+
+model HealthAlert {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  severity  String   @db.VarChar(20)
+  aqi       Int?
+  createdAt DateTime @default(now())
+
+  @@map("health_alerts")
+}
